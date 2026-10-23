@@ -488,7 +488,35 @@
     return "Other";
   }
 
-  const api = { colleges, location, seniority, functionOf, stripDegree, splitEntries };
+  // Merge spellings of common universities abroad; drop placeholders and non-schools.
+  const ABROAD = [
+    [/^(mit|massachusetts institute of technology)\b/i, "MIT"], [/stanford/i, "Stanford University"],
+    [/berkeley/i, "UC Berkeley"], [/carnegie mellon/i, "Carnegie Mellon University"],
+    [/(university of )?texas at austin|^university of texas$/i, "UT Austin"], [/wharton|university of pennsylvania/i, "University of Pennsylvania"],
+    [/harvard/i, "Harvard University"], [/university of michigan/i, "University of Michigan"], [/columbia university/i, "Columbia University"],
+    [/princeton/i, "Princeton University"], [/cornell/i, "Cornell University"], [/ucla/i, "UCLA"], [/^uc san diego|university of california, san diego/i, "UC San Diego"],
+    [/university of southern california/i, "University of Southern California"], [/new york university/i, "New York University"],
+    [/indiana university/i, "Indiana University"], [/western university|ivey business school/i, "Western University (Canada)"],
+    [/northwestern/i, "Northwestern University"], [/university of chicago/i, "University of Chicago"],
+  ];
+  function abroadName(n) {
+    if (/^\(|unknown|institution hidden|^upmc$|general assembly/i.test(n)) return "";
+    for (const [re, name] of ABROAD) if (re.test(n)) return name;
+    return n.replace(/\s*\((inferred|likely)[^)]*\)/i, "").trim();
+  }
+
+  /** Colleges for a person: Indian institutions first; Indian-origin people who studied abroad get their
+   *  foreign colleges (group "Colleges abroad"); nobody is left without a value. */
+  function personColleges(indianText, otherText) {
+    const c = colleges(indianText);
+    if (c.length) return c;
+    const seen = new Set();
+    const abroad = colleges(otherText).map((x) => ({ name: abroadName(x.name), group: "Colleges abroad" }))
+      .filter((x) => x.name && !seen.has(x.name) && seen.add(x.name));
+    return abroad.length ? abroad : [{ name: "Education not found", group: "Education not found" }];
+  }
+
+  const api = { colleges, personColleges, location, seniority, functionOf, stripDegree, splitEntries };
   if (typeof module === "object" && module.exports) module.exports = api;
   else root.Normalize = api;
 })(typeof window !== "undefined" ? window : globalThis);

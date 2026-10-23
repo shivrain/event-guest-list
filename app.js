@@ -14,8 +14,10 @@
     ["Other colleges & universities", "Other colleges & universities"],
     ["Schools", "Schools (school-level only)"],
     ["No Indian institution listed", "No Indian institution in source data"],
+    ["Colleges abroad", "Colleges abroad (Indian-origin people)"],
+    ["Education not found", "Education not found"],
   ];
-  const EDU_ORDER = ["College / university in India", "School in India only", "No Indian institution listed"];
+  const EDU_ORDER = ["Studied in India (college)", "Studied in India (school only)", "Indian origin, studied abroad", "Indian origin, education not found", "No Indian institution listed"];
 
   // ------------------------------------------------------------ state
   let people = [];
@@ -51,7 +53,7 @@
     { id: "fn", label: "Title: function" },
     { id: "role", label: "Role type" },
     { id: "col", label: "College", tree: "col", search: "Search colleges, e.g. IIT Bombay", open: true },
-    { id: "edu", label: "Education level", order: EDU_ORDER },
+    { id: "edu", label: "Indian connection", order: EDU_ORDER },
     { id: "li", label: "LinkedIn URL", order: ["Has LinkedIn", "No LinkedIn"] },
     { id: "src", label: "Source list" },
   ];
@@ -110,7 +112,7 @@
     const C = {
       name: col(/^person|^name/i), company: col(/^company$/i), category: col(/category/i), title: col(/title/i),
       role: col(/role type/i), loc: col(/location/i), edu: col(/indian educational|institution/i), degree: col(/degree/i), li: col(/linkedin/i),
-      src: col(/added from/i), other: col(/other education/i),
+      src: col(/added from/i), other: col(/other education/i), conn: col(/indian connection/i),
     };
     const get = (r, i) => (i >= 0 && r[i] != null ? String(r[i]).trim() : "");
     return master.slice(1).filter((r) => get(r, C.name)).map((r, i) => {
@@ -118,17 +120,20 @@
         i, name: get(r, C.name), company: get(r, C.company), category: get(r, C.category) || "Uncategorised",
         title: get(r, C.title), roleType: get(r, C.role) || "Unknown", locRaw: get(r, C.loc), eduRaw: get(r, C.edu),
         degree: get(r, C.degree), linkedin: get(r, C.li), otherEdu: get(r, C.other),
-        source: sourceLabel(get(r, C.src)),
+        source: sourceLabel(get(r, C.src)), connection: get(r, C.conn),
       };
       if (p.linkedin && !/^https?:\/\//i.test(p.linkedin)) p.linkedin = "https://" + p.linkedin;
       p.id = p.linkedin || p.name + "|" + p.company;
       p.locs = N.location(p.locRaw);
       p.locKeys = [...new Set(p.locs.flatMap((l) => [l.region, l.region + "|" + l.place]))];
-      p.cols = N.colleges(p.eduRaw);
+      p.cols = N.personColleges(p.eduRaw, p.connection ? p.otherEdu : "");
       p.colKeys = [...new Set(p.cols.flatMap((c) => ["g:" + c.group, "c:" + c.name]))];
       p.cols.forEach((c) => colGroup.set("c:" + c.name, "g:" + c.group));
       const groups = new Set(p.cols.map((c) => c.group));
-      p.edu = [...groups].some((g) => g !== "Schools" && g !== "No Indian institution listed") ? EDU_ORDER[0] : groups.has("Schools") ? EDU_ORDER[1] : EDU_ORDER[2];
+      p.edu = /^indian origin, studied/i.test(p.connection) ? EDU_ORDER[2]
+        : /^indian origin, education/i.test(p.connection) ? EDU_ORDER[3]
+        : [...groups].some((g) => !["Schools", "No Indian institution listed", "Colleges abroad", "Education not found"].includes(g)) ? EDU_ORDER[0]
+        : groups.has("Schools") ? EDU_ORDER[1] : EDU_ORDER[4];
       p.seniority = N.seniority(p.title, p.roleType);
       p.fn = N.functionOf(p.title);
       Search.prepare(p);
@@ -294,8 +299,9 @@
   function rowHTML(p) {
     const on = shortlist.has(p.id);
     const H = (t) => Search.highlight(esc(t), Q && Q.highlight);
+    const conn = /^indian origin/i.test(p.connection) ? `<div class="role">${esc(p.connection)}</div>` : "";
     const cols = p.cols.length
-      ? p.cols.map((c) => `<button class="tag ${c.group === "No Indian institution listed" ? "warn" : ""}" data-add="col" data-k="${esc("c:" + c.name)}" title="Filter by ${esc(c.name)}">${H(c.name)}</button>`).join("")
+      ? p.cols.map((c) => `<button class="tag ${c.group === "No Indian institution listed" ? "warn" : ""}" data-add="col" data-k="${esc("c:" + c.name)}" title="Filter by ${esc(c.name)}">${H(c.name)}</button>`).join("") + conn
       : `<span class="muted small">Not listed</span>`;
     const locs = p.locs.map((l) => `<button class="tag" data-add="loc" data-k="${esc(l.region + "|" + l.place)}" title="${esc(p.locRaw)}">${H(l.place)}${l.region === "US" && l.place !== "Other US" ? ", US" : ""}</button>`).join("");
     const open = ui.openRaw.has(p.id);
@@ -348,7 +354,7 @@
       kv.push(`<div>${esc(r[0])}</div><div class="v">${typeof r[1] === "number" ? fmt(r[1]) : esc(r[1])}</div>`);
     }
     $("kv").innerHTML = kv.join("");
-    const outside = people.filter((p) => p.edu === EDU_ORDER[2]).length;
+    const outside = people.filter((p) => p.edu === EDU_ORDER[4]).length;
     $("notes").innerHTML = notes.map((n) => `<p>${esc(n)}</p>`).join("") +
       `<p><b>How this page groups the data.</b> College names are merged across spellings (for example “IIT Delhi” and “Indian Institute of Technology, Delhi”). Locations are grouped into US, India and the rest of the world, with cities for India and metro areas for the US. Seniority and function are worked out from each person's title. ${outside ? `${outside} people have no Indian institution in the source data (the original search matched them by mistake, e.g. “Susquehanna” contains “anna university”). They are grouped under “No Indian institution listed” so you can review them.` : ""}</p>`;
   }
