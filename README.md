@@ -14,6 +14,20 @@ It is a static site that runs on GitHub Pages. There is no server and no build s
 - **Search:** `search.js` handles short forms (IITB, KGP, BLR, SF, CXO…), typos, best-match ranking and the suggestions under the search bar. To add a short form, add a line to `ALIASES` (or `PLACE_ALIASES` for places).
 - **Page:** `index.html` + `app.js`, styled in Together colours.
 
+## Claude features (optional)
+
+With a gateway configured, the search bar understands sentences ("robotics founders from IIT in Bengaluru") and an **Ask Claude** button returns a shortlist with a one-line reason per person. Both run through a small Cloudflare Worker in `gateway/`, which holds the Claude API key, allows only this page to call it, limits each visitor to 10 calls a minute, and stops at a daily spend cap (default $3). Results always come from the spreadsheet; Claude only chooses filters or rows.
+
+Setup, once:
+
+```bash
+cd gateway && ./deploy.sh
+```
+
+It asks you to log in to Cloudflare (browser) and to paste a Claude API key from console.anthropic.com, then deploys and writes the gateway URL into `config.js`. Commit and push `config.js` to switch the features on. `./deploy.sh --key` changes the key; `./deploy.sh --code` sets an optional access code visitors must enter once. With `config.js` empty the page behaves as a plain searchable list.
+
+Costs on Claude Sonnet 5.5: under 1¢ per sentence search; about 10¢ for the first "Ask Claude" question and 1–2¢ for the next ones in the same hour (the roster is cached).
+
 ## Updating the list
 
 1. Replace `data/guest-list.xlsx` with the new version. Keep the same tab names and column headers. Column order can change.

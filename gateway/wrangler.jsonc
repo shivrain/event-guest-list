@@ -1,0 +1,30 @@
+{
+  // Cloudflare Worker that sits between the Event Guest List page and Claude.
+  // Secrets (set with `wrangler secret put`, never written here):
+  //   ANTHROPIC_API_KEY  - required
+  //   ACCESS_CODE        - optional; when set, the page asks visitors for it once
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "event-guest-list-gateway",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-03-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "vars": {
+    // Pages allowed to call this gateway (comma-separated origins).
+    "ALLOWED_ORIGINS": "https://shivrain.github.io,http://localhost:8765",
+    // Stop calling Claude once today's spend passes this (US cents). The page falls back to plain search.
+    "DAILY_CAP_CENTS": "300",
+    // Which Claude model answers.
+    "MODEL": "claude-sonnet-5-5"
+  },
+  // Per-visitor limits: 10 Claude calls per minute per IP.
+  "unsafe": {
+    "bindings": [
+      { "name": "RATE_LIMIT", "type": "ratelimit", "namespace_id": "1001", "simple": { "limit": 10, "period": 60 } }
+    ]
+  },
+  // Daily spend counter. `deploy.sh` creates the namespace and fills in the id.
+  "kv_namespaces": [
+    { "binding": "SPEND", "id": "KV_ID_PLACEHOLDER" }
+  ]
+}
