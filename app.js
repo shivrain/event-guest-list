@@ -124,7 +124,6 @@
 
   // ------------------------------------------------------------ filtering
   function passes(p, skip) {
-    if (state.picks && !state.picks.has(p.i)) return false;
     if (state.q && !(Q && Q.scores.has(p.i))) return false;
     if (state.title && !p.title.toLowerCase().includes(state.title.toLowerCase())) return false;
     for (const f of FACETS) {
@@ -253,7 +252,7 @@
     $("clearQ").hidden = !$("q").value; $("kbd").hidden = !!$("q").value;
     FACETS.forEach(renderFacet);
     const list = visible();
-    const active = FACETS.reduce((n, f) => n + sel(f.id).size, 0) + (state.title ? 1 : 0) + (state.q ? 1 : 0) + (state.picks ? 1 : 0);
+    const active = FACETS.reduce((n, f) => n + sel(f.id).size, 0) + (state.title ? 1 : 0) + (state.q ? 1 : 0);
     $("count").innerHTML = state.shortlistOnly
       ? `${fmt(list.length)} <span>on your shortlist</span>`
       : `${fmt(list.length)} <span>of ${fmt(people.length)} people</span>`;
@@ -264,7 +263,6 @@
     // Active filter chips
     let chips = "";
     if (state.shortlistOnly) chips += `<button class="chip" data-chip="short"><b>Shortlist only</b> <span class="x">×</span></button>`;
-    if (state.picks) chips += `<button class="chip ai" data-chip="picks" title="${esc(state.picksQuestion || "")}">✦ Claude's picks: <b>${state.picks.size}</b> <span class="x">×</span></button>`;
     if (state.q) chips += `<button class="chip" data-chip="q">Search: <b>${esc(state.q)}</b> <span class="x">×</span></button>`;
     if (state.title) chips += `<button class="chip" data-chip="title">Title contains: <b>${esc(state.title)}</b> <span class="x">×</span></button>`;
     for (const f of FACETS) for (const k of sel(f.id)) chips += `<button class="chip" data-chip="${f.id}" data-k="${esc(k)}">${esc(f.label.replace(/^Title: /, ""))}: <b>${esc(labelFor(f.id, k))}</b> <span class="x">×</span></button>`;
@@ -290,7 +288,7 @@
     return `<tr>
       <td class="chk"><button class="star ${on ? "on" : ""}" data-star="${esc(p.id)}" aria-pressed="${on}" title="${on ? "Remove from" : "Add to"} shortlist">${on ? "★" : "☆"}</button></td>
       <td><div class="name-row">${p.linkedin ? `<a class="li" href="${esc(p.linkedin)}" target="_blank" rel="noopener" title="Open LinkedIn">in</a>` : ""}<span class="name">${H(p.name)}</span></div>
-        <div class="role">${esc(p.roleType)}</div>${state.picks && state.picks.get(p.i) ? `<div class="reason">✦ ${esc(state.picks.get(p.i))}</div>` : ""}</td>
+        <div class="role">${esc(p.roleType)}</div></td>
       <td>${H(p.title) || `<span class="muted">—</span>`}<div class="role">${esc(p.seniority)} · ${esc(p.fn)}</div></td>
       <td><button class="tag" data-add="company" data-k="${esc(p.company)}" style="font-weight:600">${H(p.company)}</button><div class="role col-cat">${esc(p.category)}</div></td>
       <td>${locs}</td>
@@ -380,10 +378,7 @@
   // ------------------------------------------------------------ events
   function wire() {
     let qt;
-    const commit = (fromEnter) => {
-      clearTimeout(qt); state.q = $("q").value.trim(); state.shortlistOnly = false; state.picks = null; state.limit = PAGE; showTab("guests"); render();
-      if (fromEnter && ClaudeAssist.state.on && ClaudeAssist.wordCount(state.q) >= 2 && !$("empty").hidden) ClaudeAssist.interpret(state.q);
-    };
+    const commit = () => { clearTimeout(qt); state.q = $("q").value.trim(); state.shortlistOnly = false; state.limit = PAGE; showTab("guests"); render(); };
     $("q").addEventListener("input", () => { openSuggest(); clearTimeout(qt); qt = setTimeout(commit, 180); });
     $("q").addEventListener("focus", () => { if ($("q").value.trim()) openSuggest(); });
     $("q").addEventListener("blur", () => setTimeout(closeSuggest, 120));
@@ -391,7 +386,7 @@
       const open = !$("suggest").hidden;
       if (e.key === "ArrowDown" && open) { e.preventDefault(); moveSuggest(1); }
       else if (e.key === "ArrowUp" && open) { e.preventDefault(); moveSuggest(-1); }
-      else if (e.key === "Enter") { e.preventDefault(); if (open && sIdx >= 0) applySuggestion(sugg[sIdx]); else { closeSuggest(); commit(true); } }
+      else if (e.key === "Enter") { e.preventDefault(); if (open && sIdx >= 0) applySuggestion(sugg[sIdx]); else { closeSuggest(); commit(); } }
       else if (e.key === "Escape") { closeSuggest(); }
     });
     $("suggest").addEventListener("mousedown", (e) => e.preventDefault());
@@ -399,7 +394,7 @@
     $("clearQ").addEventListener("click", () => { $("q").value = ""; closeSuggest(); commit(); $("q").focus(); });
     $("quick").addEventListener("click", (e) => {
       const b = e.target.closest("[data-quick]"); if (!b) return;
-      applyParams(new URLSearchParams(b.dataset.quick)); state.picks = null;
+      applyParams(new URLSearchParams(b.dataset.quick));
       const t = document.querySelector("[data-title]"); if (t) t.value = state.title;
       state.shortlistOnly = false; state.limit = PAGE; showTab("guests"); render();
     });
@@ -415,7 +410,7 @@
       catch (e) { prompt("Copy this link:", location.href); }
     });
     $("clearAll").addEventListener("click", () => {
-      state.q = state.title = ""; $("q").value = ""; state.sel = {}; state.shortlistOnly = false; state.picks = null; state.limit = PAGE;
+      state.q = state.title = ""; $("q").value = ""; state.sel = {}; state.shortlistOnly = false; state.limit = PAGE;
       const t = document.querySelector("[data-title]"); if (t) t.value = "";
       ui.facetQ = {}; document.querySelectorAll("[data-fq]").forEach((i) => (i.value = ""));
       render();
@@ -442,7 +437,6 @@
       const c = e.target.closest("[data-chip]"); if (!c) return;
       const f = c.dataset.chip;
       if (f === "short") state.shortlistOnly = false;
-      else if (f === "picks") state.picks = null;
       else if (f === "q") { state.q = ""; $("q").value = ""; }
       else if (f === "title") { state.title = ""; const t = document.querySelector("[data-title]"); if (t) t.value = ""; }
       else sel(f).delete(c.dataset.k);
@@ -480,7 +474,6 @@
     if (!v) return closeSuggest();
     const groups = Search.suggest(people, v, { facetOf: FACET_OF });
     const words = Search.parse(v).flatMap((t) => t.alts.map((a) => a.trim())).filter((w) => w.length > 1);
-    if (ClaudeAssist.state.on && ClaudeAssist.wordCount(v) >= 2) groups.unshift({ title: "Claude", items: [{ kind: "✦ Claude", label: `Set the filters for “${v}”`, meta: "describe who you want", ai: v }] });
     sugg = groups.flatMap((g) => g.items); sIdx = -1;
     let html = "", i = 0;
     for (const g of groups) {
@@ -499,7 +492,6 @@
   }
   function applySuggestion(it) {
     if (!it) return;
-    if (it.ai) { closeSuggest(); ClaudeAssist.interpret(it.ai); return; }
     if (it.person != null) { state.q = people[it.person].name; }
     else { sel(it.facet).add(it.key); state.q = ""; }
     $("q").value = state.q; closeSuggest();
@@ -523,7 +515,6 @@
     const t = document.querySelector("[data-title]"); if (t) t.value = state.title;
     renderCompanies(d.byCat); renderNoMatch(d.noMatch); renderCoverage(d.coverage);
     wire();
-    ClaudeAssist.init({ people, state, sel, FACETS, labelFor, render, showTab, PAGE, toast, esc, fmt });
     $("loading").hidden = true;
     showTab("guests");
     render();

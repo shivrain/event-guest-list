@@ -74,29 +74,6 @@ mark { background: var(--mark); color: inherit; border-radius: 3px; padding: 0 1
 .quick button:hover { border-color: var(--accent); color: var(--accent-text); background: var(--accent-soft); }
 .fuzzy-note { background: var(--accent-soft); color: var(--accent-text); border-radius: 10px; padding: 8px 12px; font-size: 13px; margin-bottom: 10px; }
 
-/* Claude features (shown only when the gateway is configured) */
-.btn.ai { border-color: var(--accent); color: var(--accent-text); background: var(--accent-soft); }
-.btn.ai:hover { background: var(--accent); color: var(--accent-ink); }
-.btn.ai[aria-expanded="true"] { background: var(--accent); color: var(--accent-ink); }
-.ask { margin-top: 14px; background: var(--panel); border: 1.5px solid var(--accent); border-radius: 14px; padding: 14px 16px; box-shadow: var(--shadow); }
-.ask-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-.ask textarea { width: 100%; resize: vertical; min-height: 56px; border: 1px solid var(--line-2); border-radius: 10px; background: var(--panel-2); padding: 10px 12px; outline: none; font: inherit; color: inherit; }
-.ask textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
-.ask-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
-.ask-ex { flex: 1; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
-.ask-ex span { font-size: 12.5px; color: var(--muted); }
-.ask-ex button { border: 1px solid var(--line-2); background: transparent; border-radius: 999px; padding: 4px 10px; font-size: 12.5px; color: var(--muted); }
-.ask-ex button:hover { border-color: var(--accent); color: var(--accent-text); }
-.ask-status { margin-top: 8px; min-height: 1em; }
-.ask-summary { margin-top: 8px; padding: 10px 12px; background: var(--accent-soft); border-radius: 10px; font-size: 13.5px; }
-.ai-note { display: flex; gap: 8px; align-items: center; background: var(--accent-soft); color: var(--accent-text); border-radius: 10px; padding: 8px 12px; font-size: 13px; margin-bottom: 10px; }
-.ai-note .spark { flex: none; }
-.ai-note.busy .spark { animation: spin 1.2s linear infinite; }
-.ai-note .x { margin-left: auto; border: 0; background: none; color: inherit; font-size: 16px; line-height: 1; opacity: .7; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.chip.ai { background: var(--accent); color: var(--accent-ink); }
-.reason { margin-top: 4px; font-size: 12.5px; color: var(--accent-text); }
-
 .tabs { display: flex; gap: 4px; margin-top: 18px; overflow-x: auto; }
 .tab { border: 0; background: none; padding: 10px 12px; border-bottom: 2px solid transparent; color: var(--muted); font-weight: 500; white-space: nowrap; }
 .tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
@@ -223,7 +200,6 @@ h2 { font-size: 14px; margin: 0; padding: 12px 14px; border-bottom: 1px solid va
       <div class="actions">
         <button class="btn" id="shortlistBtn" title="Show only people you starred"><span aria-hidden="true">★</span><span class="t">Shortlist</span> <span class="n" id="shortN">0</span></button>
         <button class="btn" id="copyLink" title="Copy a link to this exact filtered view"><span class="t">Copy link</span><span aria-hidden="true">🔗</span></button>
-        <button class="btn ai" id="askBtn" hidden aria-expanded="false" aria-controls="askPanel" title="Describe the guests you want and get a shortlist with reasons"><span aria-hidden="true">✦</span> Ask Claude</button>
         <button class="btn primary" id="exportBtn" title="Download the people currently shown as a CSV">Export CSV</button>
       </div>
     </div>
@@ -242,21 +218,6 @@ h2 { font-size: 14px; margin: 0; padding: 12px 14px; border-bottom: 1px solid va
       <div class="suggest" id="suggest" role="listbox" hidden></div>
     </div>
     <div class="quick" id="quick"><span>Quick picks:</span></div>
-    <section class="ask" id="askPanel" hidden aria-label="Ask Claude">
-      <div class="ask-head"><b>✦ Ask Claude for a shortlist</b><button type="button" class="link" id="askClose">Close</button></div>
-      <p class="sub">Describe the event and who you want. Claude reads the whole list and picks people, with a one-line reason each. Results come from this list only.</p>
-      <textarea id="askQ" rows="2" placeholder="e.g. 20 senior infra and ML engineers in the Bay Area for an AI-infra dinner, mixed companies"></textarea>
-      <div class="ask-row">
-        <div class="ask-ex" id="askExamples"><span>Try:</span>
-          <button type="button">15 founders in Bengaluru for a robotics breakfast</button>
-          <button type="button">10 IIT Bombay alumni in SF, mix of founders and senior ICs</button>
-          <button type="button">Researchers working on foundation models, any location</button>
-        </div>
-        <button type="button" class="btn primary" id="askGo">Ask Claude</button>
-      </div>
-      <div class="ask-status small muted" id="askStatus"></div>
-      <div class="ask-summary" id="askSummary" hidden></div>
-    </section>
     <nav class="tabs" role="tablist">
       <button class="tab" role="tab" data-tab="guests" aria-selected="true">Guests <span class="n" id="tabN1"></span></button>
       <button class="tab" role="tab" data-tab="companies" aria-selected="false">Companies <span class="n" id="tabN2"></span></button>
@@ -297,7 +258,6 @@ h2 { font-size: 14px; margin: 0; padding: 12px 14px; border-bottom: 1px solid va
       </div>
       <div class="chips" id="chips"></div>
       <div class="fuzzy-note" id="fuzzyNote" hidden></div>
-      <div class="ai-note" id="aiNote" hidden></div>
       <div class="table-wrap">
         <table>
           <thead><tr>
@@ -350,8 +310,6 @@ h2 { font-size: 14px; margin: 0; padding: 12px 14px; border-bottom: 1px solid va
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="normalize.js"></script>
 <script src="search.js"></script>
-<script src="config.js"></script>
-<script src="claude.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
