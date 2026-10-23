@@ -482,7 +482,6 @@
     });
     document.querySelectorAll(".tab").forEach((t) => t.addEventListener("click", () => showTab(t.dataset.tab)));
     document.addEventListener("keydown", (e) => {
-      if (e.key === "/" && !/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) { e.preventDefault(); showTab("guests"); $("q").focus(); }
     });
   }
 
@@ -526,8 +525,6 @@
   // ------------------------------------------------------------ boot
   load().then((d) => {
     people = buildPeople(d.master);
-    const companies = new Set(people.map((p) => p.company)).size;
-    $("subtitle").textContent = `${fmt(people.length)} people at ${fmt(companies)} AI companies · press / to search`;
     buildFacetShells();
     if (matchMedia("(max-width: 600px)").matches) $("q").placeholder = "Search a name, college, city…";
     $("quick").innerHTML = `<span>Quick picks:</span>` + QUICK.map(([l, h]) => `<button type="button" data-quick="${esc(h)}">${esc(l)}</button>`).join("");
