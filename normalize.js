@@ -110,6 +110,8 @@
     [/cincinnati/, "St. Xavier High School, Cincinnati (USA)", "No Indian institution listed"],
     [/iit institute of design|illinois institute/, "Illinois Institute of Technology, Chicago (USA)", "No Indian institution listed"],
     [/st\.? stephen'?s episcopal/, "St. Stephen's Episcopal School (USA)", "No Indian institution listed"],
+    [/school in india \(name not public\)/, "School in India (name not public)", "Schools"],
+    [/college in india|indian college \(name/, "College in India (name not public)", "Other colleges & universities"],
     [/^no education on record$/, "No education on record", "No Indian institution listed"],
     [/^early career at/, null],
 
@@ -226,11 +228,25 @@
     [/cochin university|\bcusat\b/, "CUSAT", "Other colleges & universities"],
     [/jawaharlal nehru technological|\bjntu/, "JNTU", "Other colleges & universities"],
     [/osmania/, "Osmania University", "Other colleges & universities"],
+    [/nagarjuna university/, "Acharya Nagarjuna University", "Other colleges & universities"],
+    [/\bssn college|sri sivasubramaniya nadar/, "SSN College of Engineering", "Other colleges & universities"],
+    [/karnatak(a)? university/, "Karnatak University, Dharwad", "Other colleges & universities"],
+    [/shivaji university/, "Shivaji University", "Other colleges & universities"],
+    [/jaypee/, "Jaypee University / Institute", "Other colleges & universities"],
+    [/harcourt butler|\bhbti\b/, "HBTI Kanpur", "Other colleges & universities"],
+    [/g\.? ?b\.? pant university|pantnagar/, "G. B. Pant University, Pantnagar", "Other colleges & universities"],
+    [/rajagiri/, "Rajagiri School of Engineering & Technology", "Other colleges & universities"],
+    [/xavier institute of management|\bximb\b/, "XIM Bhubaneswar (XIMB)", "Top institutes"],
+    [/sgrr|guru ram rai/, "SGRRITS Dehradun", "Other colleges & universities"],
+    [/amravati/, "Amravati University", "Other colleges & universities"],
+    [/^national institute of technology$/, "NIT (campus not specified)", "NIT"],
     [/chaitanya bharathi/, "CBIT Hyderabad", "Other colleges & universities"],
     [/andhra university/, "Andhra University", "Other colleges & universities"],
 
     // East
     [/jadavpur/, "Jadavpur University", "Other colleges & universities"],
+    [/iiest|indian institute of engineering science|bengal engineering and science|\bbesu\b/, "IIEST Shibpur", "Other colleges & universities"],
+    [/netaji subhash engineering/, "Netaji Subhash Engineering College", "Other colleges & universities"],
     [/university of calcutta|calcutta university/, "University of Calcutta", "Other colleges & universities"],
     [/st\.? xavier'?s college/, "St. Xavier's College", "Other colleges & universities"],
     [/west bengal university of technology/, "WBUT (MAKAUT)", "Other colleges & universities"],
@@ -349,6 +365,8 @@
     [/chennai/, "Chennai"],
     [/gurugram|gurgaon/, "Gurugram"],
     [/noida/, "Noida"],
+    [/faridabad/, "Faridabad"],
+    [/ghaziabad/, "Ghaziabad"],
     [/delhi/, "Delhi"],
     [/pune/, "Pune"],
     [/ahmedabad/, "Ahmedabad"],
@@ -364,7 +382,7 @@
   ];
 
   const US_METROS = [
-    [/san francisco|\bsf\b|bay area|palo alto|mountain view|san mateo|redwood city|san jose|sunnyvale|santa clara|menlo park|oakland|berkeley|fremont|cupertino|los altos|stanford|hayward|pleasanton|san leandro|walnut creek|sausalito|livermore/, "SF Bay Area"],
+    [/san francisco|\bsf\b|bay area|palo alto|mountain view|san mateo|redwood city|san jose|sunnyvale|santa clara|menlo park|oakland|berkeley|fremont|cupertino|los altos|stanford|hayward|pleasanton|san leandro|walnut creek|sausalito|livermore|belmont|san ramon|foster city|burlingame|los gatos|campbell|milpitas|san carlos|millbrae|half moon bay/, "SF Bay Area"],
     [/new york|\bnyc\b|brooklyn|manhattan|jersey city|\bny\b/, "New York Area"],
     [/seattle|bellevue|redmond|sammamish/, "Seattle Area"],
     [/los angeles|\bla\b|santa monica|irvine|covina|mission viejo|lake forest|orange county/, "Los Angeles / SoCal"],

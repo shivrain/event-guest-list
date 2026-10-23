@@ -61,7 +61,7 @@
       name: p.name, company: p.company, colleges: p.cols.map((c) => c.name + " (" + c.group + ")").join(" · "),
       title: [p.title, p.seniority, p.fn, p.roleType].join(" · "),
       places: p.locs.map((l) => l.place + " " + l.region).join(" · ") + " · " + p.locRaw,
-      category: p.category, extra: p.eduRaw + " " + p.degree,
+      category: p.category, extra: [p.eduRaw, p.degree, p.otherEdu, p.source].join(" "),
     };
     const lf = {};
     for (const k in f) lf[k] = " " + String(f[k] || "").toLowerCase() + " ";

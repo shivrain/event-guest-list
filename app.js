@@ -53,6 +53,7 @@
     { id: "col", label: "College", tree: "col", search: "Search colleges, e.g. IIT Bombay", open: true },
     { id: "edu", label: "Education level", order: EDU_ORDER },
     { id: "li", label: "LinkedIn URL", order: ["Has LinkedIn", "No LinkedIn"] },
+    { id: "src", label: "Source list" },
   ];
   const sel = (f) => (state.sel[f] || (state.sel[f] = new Set()));
 
@@ -67,6 +68,7 @@
       case "role": return [p.roleType];
       case "edu": return [p.edu];
       case "li": return [p.linkedin ? "Has LinkedIn" : "No LinkedIn"];
+      case "src": return [p.source];
     }
     return [];
   }
@@ -92,19 +94,31 @@
     };
   }
 
+  // "AI Leaders_GTM&Sales" -> "AI Leaders GTM & Sales"; empty -> original list
+  function sourceLabel(v) {
+    if (!v || /^original/i.test(v)) return "Original list (AI talent)";
+    const SOURCES = [[/gtm|sales/i, "GTM & sales leaders"], [/tech leader/i, "Tech leaders"], [/foundation/i, "Foundation labs"],
+      [/health|drug/i, "Health & drug discovery labs"], [/physical/i, "Physical AI labs"], [/robotic/i, "Robotics & labs"]];
+    v = v.replace(/_/g, " ");
+    const hit = SOURCES.find(([re]) => re.test(v));
+    return hit ? hit[1] : v.replace(/_/g, " ").trim();
+  }
+
   function buildPeople(master) {
     const head = (master[0] || []).map((h) => String(h || ""));
     const col = (re) => head.findIndex((h) => re.test(h));
     const C = {
       name: col(/^person|^name/i), company: col(/^company$/i), category: col(/category/i), title: col(/title/i),
-      role: col(/role type/i), loc: col(/location/i), edu: col(/education|institution/i), degree: col(/degree/i), li: col(/linkedin/i),
+      role: col(/role type/i), loc: col(/location/i), edu: col(/indian educational|institution/i), degree: col(/degree/i), li: col(/linkedin/i),
+      src: col(/added from/i), other: col(/other education/i),
     };
     const get = (r, i) => (i >= 0 && r[i] != null ? String(r[i]).trim() : "");
     return master.slice(1).filter((r) => get(r, C.name)).map((r, i) => {
       const p = {
         i, name: get(r, C.name), company: get(r, C.company), category: get(r, C.category) || "Uncategorised",
         title: get(r, C.title), roleType: get(r, C.role) || "Unknown", locRaw: get(r, C.loc), eduRaw: get(r, C.edu),
-        degree: get(r, C.degree), linkedin: get(r, C.li),
+        degree: get(r, C.degree), linkedin: get(r, C.li), otherEdu: get(r, C.other),
+        source: sourceLabel(get(r, C.src)),
       };
       if (p.linkedin && !/^https?:\/\//i.test(p.linkedin)) p.linkedin = "https://" + p.linkedin;
       p.id = p.linkedin || p.name + "|" + p.company;
@@ -293,7 +307,7 @@
       <td><button class="tag" data-add="company" data-k="${esc(p.company)}" style="font-weight:600">${H(p.company)}</button><div class="role col-cat">${esc(p.category)}</div></td>
       <td>${locs}</td>
       <td>${cols}<div><button class="expand" data-raw="${esc(p.id)}">${open ? "Hide" : "Show"} source details</button></div>
-        ${open ? `<div class="raw"><b>Education (as listed):</b> ${esc(p.eduRaw) || "—"}<br><b>Degree:</b> ${esc(p.degree) || "—"}<br><b>Location (as listed):</b> ${esc(p.locRaw) || "—"}${p.linkedin ? `<br><b>LinkedIn:</b> <a href="${esc(p.linkedin)}" target="_blank" rel="noopener">${esc(p.linkedin.replace(/^https?:\/\//, ""))}</a>` : ""}</div>` : ""}</td>
+        ${open ? `<div class="raw"><b>Education (as listed):</b> ${esc(p.eduRaw) || "—"}<br><b>Degree:</b> ${esc(p.degree) || "—"}${p.otherEdu ? `<br><b>Other education:</b> ${esc(p.otherEdu)}` : ""}<br><b>Source list:</b> ${esc(p.source)}<br><b>Location (as listed):</b> ${esc(p.locRaw) || "—"}${p.linkedin ? `<br><b>LinkedIn:</b> <a href="${esc(p.linkedin)}" target="_blank" rel="noopener">${esc(p.linkedin.replace(/^https?:\/\//, ""))}</a>` : ""}</div>` : ""}</td>
     </tr>`;
   }
 
@@ -359,12 +373,12 @@
   // ------------------------------------------------------------ export
   function exportCSV() {
     const list = visible();
-    const cols = ["Name", "Title", "Company", "AI company category", "Role type", "Seniority", "Function", "Region", "City / metro", "Location (as listed)", "Colleges (merged)", "Education (as listed)", "Degree & year", "LinkedIn URL"];
+    const cols = ["Name", "Title", "Company", "AI company category", "Role type", "Seniority", "Function", "Region", "City / metro", "Location (as listed)", "Colleges (merged)", "Education (as listed)", "Degree & year", "Other education", "Source list", "LinkedIn URL"];
     const q = (v) => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`;
     const lines = [cols.map(q).join(",")].concat(list.map((p) => [
       p.name, p.title, p.company, p.category, p.roleType, p.seniority, p.fn,
       [...new Set(p.locs.map((l) => l.region))].join("; "), p.locs.map((l) => l.place).join("; "), p.locRaw,
-      p.cols.map((c) => c.name).join("; "), p.eduRaw, p.degree, p.linkedin,
+      p.cols.map((c) => c.name).join("; "), p.eduRaw, p.degree, p.otherEdu, p.source, p.linkedin,
     ].map(q).join(",")));
     const blob = new Blob(["﻿" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
     const a = document.createElement("a");
